@@ -227,6 +227,16 @@ body {
     50% {
         background-position: 100% 50%;
     }
+    animation: gradientShift 3s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
 }
 
 .hero-subtitle {
@@ -772,6 +782,8 @@ body {
     transition: all var(--transition-normal);
     max-height: 90vh;
     overflow-y: auto;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal-overlay.active .modal {
@@ -829,6 +841,28 @@ body {
     color: var(--text-primary);
 }
 
+.modal-back {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.modal-back:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
 .modal-title {
     font-size: 2rem;
     font-weight: 800;
@@ -842,7 +876,12 @@ body {
 }
 
 .modal-content {
+.modal-content {
     padding: 2rem;
+}
+
+.modal-form {
+    padding: 0;
 }
 
 .modal-form {
@@ -851,6 +890,7 @@ body {
 
 .form-grid {
     display: grid;
+    grid-template-columns: repeat(2, 1fr);
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
     margin-bottom: 2rem;
@@ -1134,6 +1174,17 @@ body {
     
     .form-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .vehicle-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .vehicle-actions {
+        align-self: stretch;
+        justify-content: flex-end;
     }
     
     .vehicle-info {

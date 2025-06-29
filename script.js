@@ -155,6 +155,7 @@ class ModalManager {
   init() {
     this.bindEvents();
     this.setupFormElements();
+    this.setupFormElements();
   }
 
   bindEvents() {
@@ -498,6 +499,8 @@ class ModalManager {
 
     if (!yearSelect) return;
 
+    if (!yearSelect) return;
+
     // Reset all
     yearSelect.innerHTML = `<option value="">Select Year</option>`;
     makeSelect.innerHTML = `<option value="">Select Make</option>`;
@@ -596,6 +599,7 @@ class ModalManager {
       productTypeSelect.innerHTML = `<option value="">Select Product Type</option>`;
       productTypeSelect.disabled = true;
       submitBtn.disabled = false; // Enable submit when model is selected
+      submitBtn.disabled = false; // Enable submit when model is selected
 
       if (selectedModel) {
         this.populateProductTypes(selectedYear, selectedMake, selectedModel);
@@ -656,8 +660,11 @@ class ModalManager {
     }
 
     // Save vehicle to localStorage
+    // Save vehicle to localStorage
     Storage.saveVehicle({ year, make, model });
 
+    // Build URL and navigate
+    const url = Storage.constructVehicleURL({ year, make, model }, productType);
     // Build URL and navigate
     const url = Storage.constructVehicleURL({ year, make, model }, productType);
     console.log("Redirecting to:", url);
