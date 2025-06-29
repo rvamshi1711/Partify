@@ -155,7 +155,6 @@ class ModalManager {
   init() {
     this.bindEvents();
     this.setupFormElements();
-    this.setupFormElements();
   }
 
   bindEvents() {
@@ -271,30 +270,6 @@ class ModalManager {
       </div>
     `;
   }
-  /*
-  renderEmptyGarage() {
-    return `
-      <div class="empty-garage">
-        <div class="empty-garage-icon">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>
-            <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>
-            <path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/>
-          </svg>
-        </div>
-        <h3 class="empty-garage-title">No vehicles in your garage</h3>
-        <p class="empty-garage-subtitle">Add your first vehicle to get started finding compatible parts</p>
-        <button class="btn-add-vehicle" id="addNewVehicle">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Add Your First Vehicle
-        </button>
-      </div>
-    `;
-  }
-*/
 
   renderEmptyGarage() {
     return `
@@ -499,8 +474,6 @@ class ModalManager {
 
     if (!yearSelect) return;
 
-    if (!yearSelect) return;
-
     // Reset all
     yearSelect.innerHTML = `<option value="">Select Year</option>`;
     makeSelect.innerHTML = `<option value="">Select Make</option>`;
@@ -598,7 +571,6 @@ class ModalManager {
 
       productTypeSelect.innerHTML = `<option value="">Select Product Type</option>`;
       productTypeSelect.disabled = true;
-      submitBtn.disabled = false; // Enable submit when model is selected
       submitBtn.disabled = false; // Enable submit when model is selected
 
       if (selectedModel) {
@@ -932,4 +904,5 @@ class App {
   }
 }
 
+// Start the application
 new App();
