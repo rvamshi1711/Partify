@@ -89,6 +89,22 @@ const Storage = {
       localStorage.setItem("savedVehicles", JSON.stringify(vehicles));
     }
   },
+  deleteVehicle(index) {
+    const vehicles = this.getVehicles();
+    vehicles.splice(index, 1);
+    localStorage.setItem("savedVehicles", JSON.stringify(vehicles));
+  },
+  constructVehicleURL({ year, make, model }, productType = null) {
+    const slug = `${year}-${make}-${model}`.toLowerCase().replace(/\s+/g, "-");
+    let url = `https://partifyusa.com/collections/${slug}`;
+    
+    if (productType) {
+      const encodedType = encodeURIComponent(productType).replace(/%20/g, "+");
+      url += `?filter.p.product_type=${encodedType}`;
+    }
+    
+    return url;
+  }
 };
 
 // Theme Management
@@ -132,12 +148,13 @@ class ModalManager {
     this.openBtn = document.getElementById("openModal");
     this.closeBtn = document.getElementById("closeModal");
     this.form = document.getElementById("vehicleForm");
+    this.currentView = 'garage'; // 'garage' or 'form'
     this.init();
   }
 
   init() {
     this.bindEvents();
-    this.populateYears();
+    this.setupFormElements();
   }
 
   bindEvents() {
@@ -173,12 +190,275 @@ class ModalManager {
     }
   }
 
+  setupFormElements() {
+    this.populateYears();
+  }
+
+  showGarageView() {
+    this.currentView = 'garage';
+    const modalContent = document.querySelector('.modal');
+    const savedVehicles = Storage.getVehicles();
+    
+    modalContent.innerHTML = `
+      <!-- Header -->
+      <div class="modal-header">
+        <button class="modal-close" id="closeModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        
+        <h2 class="modal-title">My Garage</h2>
+        <p class="modal-subtitle">Select a vehicle or add a new one to find compatible parts</p>
+      </div>
+
+      <!-- Content -->
+      <div class="modal-content">
+        ${savedVehicles.length > 0 ? this.renderVehicleList(savedVehicles) : this.renderEmptyGarage()}
+      </div>
+    `;
+
+    // Re-bind close button event
+    const newCloseBtn = document.getElementById("closeModal");
+    if (newCloseBtn) {
+      newCloseBtn.addEventListener("click", () => this.close());
+    }
+
+    // Bind vehicle and action events
+    this.bindGarageEvents();
+  }
+
+  renderVehicleList(vehicles) {
+    return `
+      <div class="vehicle-list">
+        ${vehicles.map((vehicle, index) => `
+          <div class="vehicle-item" data-index="${index}">
+            <div class="vehicle-info">
+              <div class="vehicle-details">
+                <h3 class="vehicle-title">${vehicle.year} ${vehicle.make} ${vehicle.model}</h3>
+                <p class="vehicle-subtitle">Click to browse parts</p>
+              </div>
+              <div class="vehicle-actions">
+                <button class="btn-vehicle-select" data-index="${index}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12,5 19,12 12,19"/>
+                  </svg>
+                </button>
+                <button class="btn-vehicle-delete" data-index="${index}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3,6 5,6 21,6"/>
+                    <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+        
+        <button class="btn-add-vehicle" id="addNewVehicle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add New Vehicle
+        </button>
+      </div>
+    `;
+  }
+
+  renderEmptyGarage() {
+    return `
+      <div class="empty-garage">
+        <div class="empty-garage-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>
+            <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>
+            <path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/>
+          </svg>
+        </div>
+        <h3 class="empty-garage-title">No vehicles in your garage</h3>
+        <p class="empty-garage-subtitle">Add your first vehicle to get started finding compatible parts</p>
+        <button class="btn-add-vehicle" id="addNewVehicle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Your First Vehicle
+        </button>
+      </div>
+    `;
+  }
+
+  showFormView() {
+    this.currentView = 'form';
+    const modalContent = document.querySelector('.modal');
+    
+    modalContent.innerHTML = `
+      <!-- Header -->
+      <div class="modal-header">
+        <button class="modal-close" id="closeModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        
+        <button class="modal-back" id="backToGarage">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12,19 5,12 12,5"/>
+          </svg>
+        </button>
+        
+        <h2 class="modal-title">Add Vehicle</h2>
+        <p class="modal-subtitle">Select your vehicle details to find compatible parts</p>
+      </div>
+
+      <!-- Form -->
+      <form class="modal-form" id="vehicleForm">
+        <div class="form-grid">
+          <!-- Year -->
+          <div class="form-group">
+            <label class="form-label">
+              <svg class="form-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Year
+            </label>
+            <select class="form-select" id="yearSelect" required>
+              <option value="">Select Year</option>
+            </select>
+          </div>
+
+          <!-- Make -->
+          <div class="form-group">
+            <label class="form-label">
+              <svg class="form-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>
+                <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>
+                <path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/>
+              </svg>
+              Make
+            </label>
+            <select class="form-select" id="makeSelect" required disabled>
+            </select>
+          </div>
+
+          <!-- Model -->
+          <div class="form-group">
+            <label class="form-label">
+              <svg class="form-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              Model
+            </label>
+            <select class="form-select" id="modelSelect" required disabled>
+            </select>
+          </div>
+
+          <!-- Product Type -->
+          <div class="form-group">
+            <label class="form-label">
+              <svg class="form-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/>
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27,6.96 12,12.01 20.73,6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+              Product Type
+            </label>
+            <select class="form-select" id="productTypeSelect" disabled>
+            </select>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="form-submit" disabled>
+          Add Vehicle & Find Parts
+        </button>
+      </form>
+    `;
+
+    // Re-bind events
+    const newCloseBtn = document.getElementById("closeModal");
+    const backBtn = document.getElementById("backToGarage");
+    const newForm = document.getElementById("vehicleForm");
+
+    if (newCloseBtn) {
+      newCloseBtn.addEventListener("click", () => this.close());
+    }
+
+    if (backBtn) {
+      backBtn.addEventListener("click", () => this.showGarageView());
+    }
+
+    if (newForm) {
+      newForm.addEventListener("submit", (e) => this.handleSubmit(e));
+    }
+
+    // Setup form functionality
+    this.setupFormElements();
+  }
+
+  bindGarageEvents() {
+    // Add new vehicle button
+    const addBtn = document.getElementById("addNewVehicle");
+    if (addBtn) {
+      addBtn.addEventListener("click", () => this.showFormView());
+    }
+
+    // Vehicle select buttons
+    document.querySelectorAll('.btn-vehicle-select').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.currentTarget.dataset.index);
+        this.selectVehicle(index);
+      });
+    });
+
+    // Vehicle delete buttons
+    document.querySelectorAll('.btn-vehicle-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.currentTarget.dataset.index);
+        this.deleteVehicle(index);
+      });
+    });
+  }
+
+  selectVehicle(index) {
+    const vehicles = Storage.getVehicles();
+    const vehicle = vehicles[index];
+    
+    if (vehicle) {
+      const url = Storage.constructVehicleURL(vehicle);
+      console.log("Redirecting to:", url);
+      window.open(url, "_blank");
+      this.close();
+    }
+  }
+
+  deleteVehicle(index) {
+    if (confirm("Are you sure you want to remove this vehicle from your garage?")) {
+      Storage.deleteVehicle(index);
+      this.showGarageView(); // Refresh the view
+    }
+  }
+
   populateYears() {
     const yearSelect = document.getElementById("yearSelect");
     const makeSelect = document.getElementById("makeSelect");
     const modelSelect = document.getElementById("modelSelect");
     const productTypeSelect = document.getElementById("productTypeSelect");
     const submitBtn = document.querySelector(".form-submit");
+
+    if (!yearSelect) return;
 
     // Reset all
     yearSelect.innerHTML = `<option value="">Select Year</option>`;
@@ -277,12 +557,11 @@ class ModalManager {
 
       productTypeSelect.innerHTML = `<option value="">Select Product Type</option>`;
       productTypeSelect.disabled = true;
-      submitBtn.disabled = true;
+      submitBtn.disabled = false; // Enable submit when model is selected
 
       if (selectedModel) {
         this.populateProductTypes(selectedYear, selectedMake, selectedModel);
         productTypeSelect.disabled = false;
-        submitBtn.disabled = false;
       }
     });
   }
@@ -306,12 +585,9 @@ class ModalManager {
     if (this.modal) {
       this.modal.classList.add("active");
       document.body.style.overflow = "hidden";
-
-      // Focus first form element
-      const firstInput = this.modal.querySelector("select, input");
-      if (firstInput) {
-        setTimeout(() => firstInput.focus(), 100);
-      }
+      
+      // Show garage view by default
+      this.showGarageView();
     }
   }
 
@@ -341,18 +617,11 @@ class ModalManager {
       return;
     }
 
+    // Save vehicle to localStorage
     Storage.saveVehicle({ year, make, model });
 
-    // Build the base slug
-    const slug = `${year}-${make}-${model}`.toLowerCase().replace(/\s+/g, "-");
-    let url = `https://partifyusa.com/collections/${slug}`;
-
-    // If product type is selected, add it as a query param
-    if (productType) {
-      const encodedType = encodeURIComponent(productType).replace(/%20/g, "+");
-      url += `?filter.p.product_type=${encodedType}`;
-    }
-
+    // Build URL and navigate
+    const url = Storage.constructVehicleURL({ year, make, model }, productType);
     console.log("Redirecting to:", url);
     window.open(url, "_blank");
 
