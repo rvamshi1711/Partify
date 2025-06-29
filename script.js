@@ -660,11 +660,8 @@ class ModalManager {
     }
 
     // Save vehicle to localStorage
-    // Save vehicle to localStorage
     Storage.saveVehicle({ year, make, model });
 
-    // Build URL and navigate
-    const url = Storage.constructVehicleURL({ year, make, model }, productType);
     // Build URL and navigate
     const url = Storage.constructVehicleURL({ year, make, model }, productType);
     console.log("Redirecting to:", url);
