@@ -232,20 +232,14 @@ class ModalManager {
     return `
       <div class="vehicle-list">
         ${vehicles.map((vehicle, index) => `
-          <div class="vehicle-item" data-index="${index}">
+          <div class="vehicle-item clickable" data-index="${index}">
             <div class="vehicle-info">
               <div class="vehicle-details">
                 <h3 class="vehicle-title">${vehicle.year} ${vehicle.make} ${vehicle.model}</h3>
                 <p class="vehicle-subtitle">Click to browse parts</p>
               </div>
               <div class="vehicle-actions">
-                <button class="btn-vehicle-select" data-index="${index}">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                    <polyline points="12,5 19,12 12,19"/>
-                  </svg>
-                </button>
-                <button class="btn-vehicle-delete" data-index="${index}">
+                <button class="btn-vehicle-delete" data-index="${index}" onclick="event.stopPropagation()">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3,6 5,6 21,6"/>
                     <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"/>
@@ -295,6 +289,7 @@ class ModalManager {
   showFormView() {
     this.currentView = 'form';
     const modalContent = document.querySelector('.modal');
+    const savedVehicles = Storage.getVehicles();
     
     modalContent.innerHTML = `
       <!-- Header -->
@@ -306,12 +301,14 @@ class ModalManager {
           </svg>
         </button>
         
+        ${savedVehicles.length > 0 ? `
         <button class="modal-back" id="backToGarage">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="19" y1="12" x2="5" y2="12"/>
             <polyline points="12,19 5,12 12,5"/>
           </svg>
         </button>
+        ` : ''}
         
         <h2 class="modal-title">Add Vehicle</h2>
       </div>
@@ -415,9 +412,9 @@ class ModalManager {
       addBtn.addEventListener("click", () => this.showFormView());
     }
 
-    // Vehicle select buttons
-    document.querySelectorAll('.btn-vehicle-select').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+    // Make entire vehicle items clickable
+    document.querySelectorAll('.vehicle-item.clickable').forEach(item => {
+      item.addEventListener('click', (e) => {
         const index = parseInt(e.currentTarget.dataset.index);
         this.selectVehicle(index);
       });
@@ -426,6 +423,7 @@ class ModalManager {
     // Vehicle delete buttons
     document.querySelectorAll('.btn-vehicle-delete').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering the vehicle selection
         const index = parseInt(e.currentTarget.dataset.index);
         this.deleteVehicle(index);
       });

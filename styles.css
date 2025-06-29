@@ -936,6 +936,7 @@ body {
     border-radius: 1rem;
     padding: 1.5rem;
     transition: all var(--transition-fast);
+    cursor: pointer;
 }
 
 .vehicle-item:hover {
@@ -943,6 +944,10 @@ body {
     border-color: var(--blue-500);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
+}
+
+.vehicle-item.clickable {
+    cursor: pointer;
 }
 
 .vehicle-info {
